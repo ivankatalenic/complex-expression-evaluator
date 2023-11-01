@@ -30,6 +30,7 @@ public class ExpressionController {
 
 	/**
 	 * Retrieves all stored expressions.
+	 *
 	 * @return All expressions.
 	 */
 	@GetMapping("/expressions")
@@ -39,6 +40,7 @@ public class ExpressionController {
 
 	/**
 	 * Creates a new expression described in the JSON document.
+	 *
 	 * @param newExpression A new expression
 	 * @return A created expression
 	 */
@@ -55,8 +57,9 @@ public class ExpressionController {
 
 	/**
 	 * Evaluates the expression specified with an ID against the provided JSON document.
+	 *
 	 * @param expressionId An ID of the expression to be evaluated.
-	 * @param document A JSON document containing values for placeholders in the expression.
+	 * @param document     A JSON document containing values for placeholders in the expression.
 	 * @return A boolean describing evaluation result.
 	 */
 	@PostMapping("/evaluate")
