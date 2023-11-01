@@ -40,6 +40,3 @@ Implementation details:
 ```shell
 mvn clean spring-boot:run
 ```
-
----
-_WIP_
