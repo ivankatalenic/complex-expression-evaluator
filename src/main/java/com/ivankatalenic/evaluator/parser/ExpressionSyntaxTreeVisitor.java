@@ -8,18 +8,20 @@ import com.ivankatalenic.evaluator.grammar.ExpressionParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.function.BiPredicate;
+
 /**
  * A syntax tree visitor that computes the final boolean value of a parsed expression using the given JSON document.
  */
 public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 	private final Log log = LogFactory.getLog(getClass());
 	private final Object nullObject = new Object();
-	private final JsonNode root;
-	private JsonNode current;
+	private final JsonNode rootJsonNode;
+	private JsonNode currentJsonNode;
 	private StringBuilder currentJsonPath;
 
-	public ExpressionSyntaxTreeVisitor(final JsonNode root) {
-		this.root = root;
+	public ExpressionSyntaxTreeVisitor(final JsonNode rootJsonNode) {
+		this.rootJsonNode = rootJsonNode;
 	}
 
 	@Override
@@ -84,104 +86,56 @@ public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 		return !left.equals(right);
 	}
 
-	@Override
-	public Object visitBoolExprLt(ExpressionParser.BoolExprLtContext ctx) {
-		Object left = visit(ctx.ineq_elem(0));
-		Object right = visit(ctx.ineq_elem(1));
+	private static boolean compareBoolExpr(Object left, Object right,
+	                                       BiPredicate<Long, Long> longPredicate,
+	                                       BiPredicate<Double, Double> doublePredicate) throws EvaluationException {
 		return switch (left) {
-			case Boolean ignored -> false;
-			case Long leftInt -> {
-				if (right instanceof Long rightInt) {
-					yield leftInt < rightInt;
+			case Long leftLong -> {
+				if (right instanceof Long rightLong) {
+					yield longPredicate.test(leftLong, rightLong);
 				}
 				throw new EvaluationException(
 						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
 			}
 			case Double leftDouble -> {
 				if (right instanceof Double rightDouble) {
-					yield leftDouble < rightDouble;
+					yield doublePredicate.test(leftDouble, rightDouble);
 				}
 				throw new EvaluationException(
 						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
 			}
-			case String ignored -> false;
-			default -> throw new EvaluationException("unknown boolean comparison expression's left operand");
+			default -> throw new EvaluationException(
+					String.format("cannot use numerical relational operator on a non-numerical value of %s",
+					              left.getClass()));
 		};
+	}
+
+	@Override
+	public Object visitBoolExprLt(ExpressionParser.BoolExprLtContext ctx) {
+		Object left = visit(ctx.ineq_elem(0));
+		Object right = visit(ctx.ineq_elem(1));
+		return compareBoolExpr(left, right, (a, b) -> a < b, (a, b) -> a < b);
 	}
 
 	@Override
 	public Object visitBoolExprGt(ExpressionParser.BoolExprGtContext ctx) {
 		Object left = visit(ctx.ineq_elem(0));
 		Object right = visit(ctx.ineq_elem(1));
-		return switch (left) {
-			case Boolean ignored -> false;
-			case Long leftLong -> {
-				if (right instanceof Long rightLong) {
-					yield leftLong > rightLong;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
-			}
-			case Double leftDouble -> {
-				if (right instanceof Double rightDouble) {
-					yield leftDouble > rightDouble;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
-			}
-			case String ignored -> false;
-			default -> throw new EvaluationException("unknown boolean comparison expression's left operand");
-		};
+		return compareBoolExpr(left, right, (a, b) -> a > b, (a, b) -> a > b);
 	}
 
 	@Override
 	public Object visitBoolExprLe(ExpressionParser.BoolExprLeContext ctx) {
 		Object left = visit(ctx.ineq_elem(0));
 		Object right = visit(ctx.ineq_elem(1));
-		return switch (left) {
-			case Boolean ignored -> false;
-			case Long leftLong -> {
-				if (right instanceof Long rightLong) {
-					yield leftLong <= rightLong;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
-			}
-			case Double leftDouble -> {
-				if (right instanceof Double rightDouble) {
-					yield leftDouble <= rightDouble;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
-			}
-			case String ignored -> false;
-			default -> throw new EvaluationException("unknown boolean comparison expression's left operand");
-		};
+		return compareBoolExpr(left, right, (a, b) -> a <= b, (a, b) -> a <= b);
 	}
 
 	@Override
 	public Object visitBoolExprGe(ExpressionParser.BoolExprGeContext ctx) {
 		Object left = visit(ctx.ineq_elem(0));
 		Object right = visit(ctx.ineq_elem(1));
-		return switch (left) {
-			case Boolean ignored -> false;
-			case Long leftLong -> {
-				if (right instanceof Long rightLong) {
-					yield leftLong >= rightLong;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
-			}
-			case Double leftDouble -> {
-				if (right instanceof Double rightDouble) {
-					yield leftDouble >= rightDouble;
-				}
-				throw new EvaluationException(
-						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
-			}
-			case String ignored -> false;
-			default -> throw new EvaluationException("unknown boolean comparison expression's left operand");
-		};
+		return compareBoolExpr(left, right, (a, b) -> a >= b, (a, b) -> a >= b);
 	}
 
 	@Override
@@ -253,34 +207,34 @@ public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 	 */
 	@Override
 	public Object visitPathRootId(ExpressionParser.PathRootIdContext ctx) {
-		current = root.path(ctx.ID().getText());
+		currentJsonNode = rootJsonNode.path(ctx.ID().getText());
 		currentJsonPath = new StringBuilder(ctx.ID().getText());
-		if (current.isMissingNode()) {
+		if (currentJsonNode.isMissingNode()) {
 			throw new EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
-		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, current));
+		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, currentJsonNode));
 		return visit(ctx.path());
 	}
 
 	@Override
 	public Object visitPathId(ExpressionParser.PathIdContext ctx) {
-		current = current.path(ctx.ID().getText());
+		currentJsonNode = currentJsonNode.path(ctx.ID().getText());
 		currentJsonPath.append('.').append(ctx.ID().getText());
-		if (current.isMissingNode()) {
+		if (currentJsonNode.isMissingNode()) {
 			throw new EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
-		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, current));
+		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, currentJsonNode));
 		return visit(ctx.path());
 	}
 
 	@Override
 	public Object visitPathInd(ExpressionParser.PathIndContext ctx) {
 		final var index = Integer.parseInt(ctx.INT().getText());
-		current = current.path(index);
+		currentJsonNode = currentJsonNode.path(index);
 		currentJsonPath.append('[').append(index).append(']');
-		if (current.isMissingNode()) {
+		if (currentJsonNode.isMissingNode()) {
 			throw new EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
@@ -289,6 +243,6 @@ public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 
 	@Override
 	public Object visitPathEmpty(ExpressionParser.PathEmptyContext ctx) {
-		return current;
+		return currentJsonNode;
 	}
 }
