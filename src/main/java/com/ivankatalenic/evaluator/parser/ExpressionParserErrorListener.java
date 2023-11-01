@@ -9,11 +9,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Error listener for the expression parser that aggregates encountered syntax errors in a list.
+ */
 public class ExpressionParserErrorListener extends BaseErrorListener {
 	private final List<String> errors;
 
 	public ExpressionParserErrorListener() {
-		this.errors = new ArrayList<String>();
+		errors = new ArrayList<>();
 	}
 
 	@Override
@@ -23,7 +26,7 @@ public class ExpressionParserErrorListener extends BaseErrorListener {
 		List<String> stack = ((Parser) recognizer).getRuleInvocationStack();
 		Collections.reverse(stack);
 		errors.add(String.format("Syntax error: Rule stack %s: Line %d: Offset %d: %s",
-				stack, line, charPositionInLine, msg));
+		                         stack, line, charPositionInLine, msg));
 	}
 
 	public List<String> getErrors() {

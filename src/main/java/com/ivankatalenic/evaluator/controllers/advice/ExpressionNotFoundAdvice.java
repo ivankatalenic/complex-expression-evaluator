@@ -1,6 +1,6 @@
 package com.ivankatalenic.evaluator.controllers.advice;
 
-import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionNotFoundException;
+import com.ivankatalenic.evaluator.exceptions.ExpressionNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

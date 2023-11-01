@@ -8,7 +8,7 @@ class EvaluatorApplicationTests {
 
 	@Test
 	void contextLoads() {
-		String tests = "For real world projects sure, but for this I won't bother 😂";
+		// For real-world projects sure, but for this I won't bother 🙂
 	}
 
 }

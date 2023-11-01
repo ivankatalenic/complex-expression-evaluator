@@ -5,7 +5,7 @@ start
     ;
 expr
     : expr '&&' par_expr # ExprAnd
-    | expr '||' par_expr # ExprOr
+    | expr 'OR' par_expr # ExprOr
     | par_expr # ExprPar
     ;
 par_expr
@@ -45,7 +45,7 @@ path_root
     ;
 path
     : '.' ID path # PathId
-    | '[' UINT ']' path # PathInd
+    | '[' INT ']' path # PathInd
     | # PathEmpty
     ;
 ID
@@ -55,10 +55,6 @@ INT
     : UINT
     | '-' UINT
     ;
-UINT
-    : [1-9] [0-9]*
-    | '0'
-    ;
 FLOAT
     : INT '.' [0-9]+ EXP
     ;
@@ -67,6 +63,10 @@ STRING
     ;
 WS
     : [ \t\r\n]+ -> skip
+    ;
+fragment UINT
+    : [1-9] [0-9]*
+    | '0'
     ;
 fragment EXP
     : EXPSYM EXPSIGN UINT
