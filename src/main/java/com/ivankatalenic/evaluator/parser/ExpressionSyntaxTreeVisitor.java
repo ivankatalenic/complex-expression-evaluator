@@ -172,15 +172,15 @@ public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 	public Object visitFactorPathRoot(ExpressionParser.FactorPathRootContext ctx) {
 		JsonNode jsonNode = (JsonNode) visit(ctx.path_root());
 		return switch (jsonNode.getNodeType()) {
-			case JsonNodeType.BOOLEAN -> jsonNode.asBoolean();
-			case JsonNodeType.MISSING -> throw new EvaluationException("JSON path leads to a missing node");
-			case JsonNodeType.NULL -> nullObject;
 			case JsonNodeType.NUMBER -> {
 				if (jsonNode.isIntegralNumber()) yield jsonNode.asLong();
 				if (jsonNode.isFloatingPointNumber()) yield jsonNode.asDouble();
 				yield jsonNode;
 			}
+			case JsonNodeType.BOOLEAN -> jsonNode.asBoolean();
 			case JsonNodeType.STRING -> jsonNode.asText();
+			case JsonNodeType.NULL -> nullObject;
+			case JsonNodeType.MISSING -> throw new EvaluationException("JSON path leads to a missing node");
 			default -> jsonNode;
 		};
 	}
