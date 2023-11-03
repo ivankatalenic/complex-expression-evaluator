@@ -35,8 +35,18 @@ Implementation details:
 	}
 	```
 
-## Run
+## Commands
+
+### Run
 
 ```shell
 mvn clean spring-boot:run
 ```
+
+### Generate the parser code
+
+```shell
+mvn generate-sources
+```
+
+This isn't needed specifically as it will be done automatically when running. The code will be in the `target` directory.
