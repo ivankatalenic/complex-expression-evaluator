@@ -5,8 +5,8 @@ import com.ivankatalenic.evaluator.exceptions.EvaluationException;
 import com.ivankatalenic.evaluator.grammar.ExpressionLexer;
 import com.ivankatalenic.evaluator.grammar.ExpressionParser;
 import com.ivankatalenic.evaluator.models.Expression;
-import com.ivankatalenic.evaluator.parser.ExpressionParserErrorListener;
-import com.ivankatalenic.evaluator.parser.ExpressionSyntaxTreeVisitor;
+import com.ivankatalenic.evaluator.parser.ErrorListener;
+import com.ivankatalenic.evaluator.parser.SyntaxTreeVisitor;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -42,7 +42,7 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator {
 	}
 
 	private static ParseResult parse(final Expression expr) {
-		final var errorListener = new ExpressionParserErrorListener();
+		final var errorListener = new ErrorListener();
 		final var parser = getParser(errorListener, expr);
 		try {
 			var parseTree = parser.start();
@@ -84,7 +84,7 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator {
 			throw new EvaluationException(String.format("encountered syntax errors while evaluating: %s", errorStr));
 		}
 
-		final var visitor = new ExpressionSyntaxTreeVisitor(jsonDocument);
+		final var visitor = new SyntaxTreeVisitor(jsonDocument);
 		final Object result = visitor.visit(parseResult.parseTree());
 		if (!(result instanceof Boolean)) {
 			throw new EvaluationException(String.format("evaluator returned a non-boolean result: %s", result));

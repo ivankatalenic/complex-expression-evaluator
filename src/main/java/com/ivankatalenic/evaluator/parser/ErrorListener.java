@@ -10,10 +10,10 @@ import java.util.List;
 /**
  * Error listener for the expression parser that aggregates encountered syntax errors in a list.
  */
-public class ExpressionParserErrorListener extends BaseErrorListener {
+public class ErrorListener extends BaseErrorListener {
 	private final List<String> errors;
 
-	public ExpressionParserErrorListener() {
+	public ErrorListener() {
 		errors = new ArrayList<>();
 	}
 

@@ -13,14 +13,14 @@ import java.util.function.BiPredicate;
 /**
  * A syntax tree visitor that computes the final boolean value of a parsed expression using the given JSON document.
  */
-public class ExpressionSyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
+public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 	private final Log log = LogFactory.getLog(getClass());
 	private final Object nullObject = new Object();
 	private final JsonNode rootJsonNode;
 	private JsonNode currentJsonNode;
 	private StringBuilder currentJsonPath;
 
-	public ExpressionSyntaxTreeVisitor(final JsonNode rootJsonNode) {
+	public SyntaxTreeVisitor(final JsonNode rootJsonNode) {
 		this.rootJsonNode = rootJsonNode;
 	}
 
