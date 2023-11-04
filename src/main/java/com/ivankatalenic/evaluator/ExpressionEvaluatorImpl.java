@@ -10,8 +10,10 @@ import com.ivankatalenic.evaluator.parser.ExpressionSyntaxTreeVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -19,56 +21,68 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator {
 	public ExpressionEvaluatorImpl() {
 	}
 
-	private static ExpressionParser getExpressionParser(final Expression e) {
-		final var charStream = CharStreams.fromString(e.getValue());
+	private static ExpressionParser getParser(final Expression expr) {
+		final var charStream = CharStreams.fromString(expr.getValue());
 		final var lexer = new ExpressionLexer(charStream);
 		final var tokenStream = new CommonTokenStream(lexer);
 		return new ExpressionParser(tokenStream);
 	}
 
-	@Override
-	public Optional<String> validate(final Expression e) {
-		if (e == null) {
-			throw new NullPointerException("an expression for validation cannot be null");
-		}
-		final var parser = getExpressionParser(e);
+	private static ExpressionParserErrorListener getParserErrorListener(final ExpressionParser parser) {
 		final var errorListener = new ExpressionParserErrorListener();
 		parser.removeErrorListeners();
 		parser.addErrorListener(errorListener);
+		return errorListener;
+	}
+
+	private record ParseResult(ParseTree parseTree, List<String> errors) {
+	}
+
+	private static ParseResult parse(final Expression expr) {
+		final var parser = getParser(expr);
+		final var parserErrorListener = getParserErrorListener(parser);
 		try {
-			parser.start();
+			var parseTree = parser.start();
+			return new ParseResult(parseTree, parserErrorListener.getErrors());
 		} catch (RecognitionException re) {
-			return Optional.of(re.getMessage());
+			var errors = parserErrorListener.getErrors();
+			errors.addFirst(re.getMessage());
+			return new ParseResult(null, errors);
+		}
+	}
+
+	@Override
+	public Optional<String> validate(final Expression expr) {
+		if (expr == null) {
+			throw new NullPointerException("an expression for validation cannot be null");
 		}
 
-		if (parser.getNumberOfSyntaxErrors() > 0) {
-			final var errors = String.join("; ", errorListener.getErrors());
-			return Optional.of(errors);
+		ParseResult parseResult = parse(expr);
+		if (!parseResult.errors().isEmpty()) {
+			final var errorStr = String.join("; ", parseResult.errors());
+			return Optional.of(errorStr);
 		}
+
 		return Optional.empty();
 	}
 
 	@Override
-	public boolean evaluate(final Expression e, final JsonNode jsonDocument) throws EvaluationException {
-		if (e == null) {
+	public boolean evaluate(final Expression expr, final JsonNode jsonDocument) throws EvaluationException {
+		if (expr == null) {
 			throw new NullPointerException("an expression for evaluation cannot be null");
 		}
 		if (jsonDocument == null) {
 			throw new NullPointerException("a JSON document with data cannot be null");
 		}
-		final var parser = getExpressionParser(e);
-		final var errorListener = new ExpressionParserErrorListener();
-		parser.removeErrorListeners();
-		parser.addErrorListener(errorListener);
-		final var tree = parser.start();
 
-		if (parser.getNumberOfSyntaxErrors() > 0) {
-			final var errors = String.join("; ", errorListener.getErrors());
-			throw new EvaluationException(String.format("encountered syntax errors while evaluating: %s", errors));
+		ParseResult parseResult = parse(expr);
+		if (!parseResult.errors().isEmpty()) {
+			final var errorStr = String.join("; ", parseResult.errors());
+			throw new EvaluationException(String.format("encountered syntax errors while evaluating: %s", errorStr));
 		}
 
 		final var visitor = new ExpressionSyntaxTreeVisitor(jsonDocument);
-		final Object result = visitor.visit(tree);
+		final Object result = visitor.visit(parseResult.parseTree());
 		if (!(result instanceof Boolean)) {
 			throw new EvaluationException(String.format("evaluator returned a non-boolean result: %s", result));
 		}
