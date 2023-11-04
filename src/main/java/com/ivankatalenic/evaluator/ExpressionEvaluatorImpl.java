@@ -7,6 +7,7 @@ import com.ivankatalenic.evaluator.grammar.ExpressionParser;
 import com.ivankatalenic.evaluator.models.Expression;
 import com.ivankatalenic.evaluator.parser.ExpressionParserErrorListener;
 import com.ivankatalenic.evaluator.parser.ExpressionSyntaxTreeVisitor;
+import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
@@ -21,31 +22,33 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator {
 	public ExpressionEvaluatorImpl() {
 	}
 
-	private static ExpressionParser getParser(final Expression expr) {
+	private static ExpressionParser getParser(final ANTLRErrorListener errorListener, final Expression expr) {
 		final var charStream = CharStreams.fromString(expr.getValue());
-		final var lexer = new ExpressionLexer(charStream);
-		final var tokenStream = new CommonTokenStream(lexer);
-		return new ExpressionParser(tokenStream);
-	}
 
-	private static ExpressionParserErrorListener getParserErrorListener(final ExpressionParser parser) {
-		final var errorListener = new ExpressionParserErrorListener();
+		final var lexer = new ExpressionLexer(charStream);
+		lexer.removeErrorListeners();
+		lexer.addErrorListener(errorListener);
+
+		final var tokenStream = new CommonTokenStream(lexer);
+
+		final var parser = new ExpressionParser(tokenStream);
 		parser.removeErrorListeners();
 		parser.addErrorListener(errorListener);
-		return errorListener;
+
+		return parser;
 	}
 
 	private record ParseResult(ParseTree parseTree, List<String> errors) {
 	}
 
 	private static ParseResult parse(final Expression expr) {
-		final var parser = getParser(expr);
-		final var parserErrorListener = getParserErrorListener(parser);
+		final var errorListener = new ExpressionParserErrorListener();
+		final var parser = getParser(errorListener, expr);
 		try {
 			var parseTree = parser.start();
-			return new ParseResult(parseTree, parserErrorListener.getErrors());
+			return new ParseResult(parseTree, errorListener.getErrors());
 		} catch (RecognitionException re) {
-			var errors = parserErrorListener.getErrors();
+			var errors = errorListener.getErrors();
 			errors.addFirst(re.getMessage());
 			return new ParseResult(null, errors);
 		}
