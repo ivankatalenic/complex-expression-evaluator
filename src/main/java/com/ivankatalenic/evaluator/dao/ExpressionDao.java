@@ -1,5 +1,7 @@
 package com.ivankatalenic.evaluator.dao;
 
+import com.ivankatalenic.evaluator.validator.CheckSyntax;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Objects;
@@ -9,6 +11,8 @@ public class ExpressionDao {
 	@NotNull
 	private String name;
 	@NotNull
+	@NotEmpty
+	@CheckSyntax
 	private String value;
 
 	public ExpressionDao(Long id, String name, String value) {

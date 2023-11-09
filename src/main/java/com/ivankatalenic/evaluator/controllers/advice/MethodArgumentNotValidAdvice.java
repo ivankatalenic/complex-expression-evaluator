@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class MethodArgumentNotValidAdvice {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ProblemDetail handler(MethodArgumentNotValidException ex) {
+		// TODO Replace the error report for syntax errors and similar instead of generic "Invalid request" message.
 		return ex.getBody();
 	}
 }

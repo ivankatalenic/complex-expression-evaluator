@@ -2,8 +2,6 @@ package com.ivankatalenic.evaluator.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
-import com.ivankatalenic.evaluator.ExpressionValidator;
-import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionInvalidException;
 import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionNotFoundException;
 import com.ivankatalenic.evaluator.dao.ExpressionDao;
 import com.ivankatalenic.evaluator.mapper.ExpressionMapper;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Expression evaluator controller.
@@ -27,14 +24,12 @@ public class ExpressionController {
 	private final Log log = LogFactory.getLog(getClass());
 	private final ExpressionMapper mapper;
 	private final ExpressionEvaluator evaluator;
-	private final ExpressionValidator validator;
 	private final ExpressionRepository repository;
 
-	public ExpressionController(ExpressionMapper mapper, ExpressionEvaluator evaluator, ExpressionValidator validator,
+	public ExpressionController(ExpressionMapper mapper, ExpressionEvaluator evaluator,
 			ExpressionRepository repository) {
 		this.mapper = mapper;
 		this.evaluator = evaluator;
-		this.validator = validator;
 		this.repository = repository;
 	}
 
@@ -57,10 +52,6 @@ public class ExpressionController {
 	@PostMapping("/expression")
 	public ExpressionDao addExpression(@Valid @RequestBody ExpressionDao exprDao) {
 		final var expr = mapper.daoToModel(exprDao);
-		Optional<String> error = validator.validate(expr);
-		if (error.isPresent()) {
-			throw new ExpressionInvalidException(error.get());
-		}
 		log.debug(String.format("New expression: Name: %s, Value: %s\n", exprDao.getName(),
 				exprDao.getValue()));
 		return mapper.modelToDao(repository.save(expr));

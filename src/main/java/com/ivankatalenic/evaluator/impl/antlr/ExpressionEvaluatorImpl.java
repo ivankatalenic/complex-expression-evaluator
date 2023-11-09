@@ -2,8 +2,8 @@ package com.ivankatalenic.evaluator.impl.antlr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
-import com.ivankatalenic.evaluator.ExpressionValidator;
 import com.ivankatalenic.evaluator.models.Expression;
+import com.ivankatalenic.evaluator.validator.SyntaxValidator;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -15,12 +15,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class ExpressionEvaluatorImpl implements ExpressionEvaluator, ExpressionValidator {
+public class ExpressionEvaluatorImpl implements ExpressionEvaluator, SyntaxValidator {
 	public ExpressionEvaluatorImpl() {
 	}
 
-	private static ExpressionParser getParser(final ANTLRErrorListener errorListener, final Expression expr) {
-		final var charStream = CharStreams.fromString(expr.getValue());
+	private static ExpressionParser getParser(final ANTLRErrorListener errorListener, final String expr) {
+		final var charStream = CharStreams.fromString(expr);
 
 		final var lexer = new ExpressionLexer(charStream);
 		lexer.removeErrorListeners();
@@ -38,7 +38,7 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator, ExpressionV
 	private record ParseResult(ParseTree parseTree, List<String> errors) {
 	}
 
-	private static ParseResult parse(final Expression expr) {
+	private static ParseResult parse(final String expr) {
 		final var errorListener = new ErrorListener();
 		final var parser = getParser(errorListener, expr);
 		try {
@@ -52,11 +52,7 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator, ExpressionV
 	}
 
 	@Override
-	public Optional<String> validate(final Expression expr) {
-		if (expr == null) {
-			throw new NullPointerException("an expression for validation cannot be null");
-		}
-
+	public Optional<String> validate(String expr) {
 		ParseResult parseResult = parse(expr);
 		if (!parseResult.errors().isEmpty()) {
 			final var errorStr = String.join("; ", parseResult.errors());
@@ -75,7 +71,7 @@ public class ExpressionEvaluatorImpl implements ExpressionEvaluator, ExpressionV
 			throw new NullPointerException("a JSON document with data cannot be null");
 		}
 
-		ParseResult parseResult = parse(expr);
+		ParseResult parseResult = parse(expr.getValue());
 		if (!parseResult.errors().isEmpty()) {
 			final var errorStr = String.join("; ", parseResult.errors());
 			throw new EvaluationException(String.format("encountered syntax errors while evaluating: %s", errorStr));
