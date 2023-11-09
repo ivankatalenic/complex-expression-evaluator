@@ -2,6 +2,7 @@ package com.ivankatalenic.evaluator.impl.antlr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
+import com.ivankatalenic.evaluator.ExpressionValidator;
 import com.ivankatalenic.evaluator.models.Expression;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStreams;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class ExpressionEvaluatorImpl implements ExpressionEvaluator {
+public class ExpressionEvaluatorImpl implements ExpressionEvaluator, ExpressionValidator {
 	public ExpressionEvaluatorImpl() {
 	}
 

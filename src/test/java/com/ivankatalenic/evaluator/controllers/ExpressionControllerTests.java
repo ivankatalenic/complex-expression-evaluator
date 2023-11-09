@@ -2,7 +2,7 @@ package com.ivankatalenic.evaluator.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
-import com.ivankatalenic.evaluator.controllers.ExpressionController;
+import com.ivankatalenic.evaluator.ExpressionValidator;
 import com.ivankatalenic.evaluator.dao.ExpressionDao;
 import com.ivankatalenic.evaluator.mapper.ExpressionMapper;
 import com.ivankatalenic.evaluator.models.Expression;
@@ -32,6 +32,8 @@ public class ExpressionControllerTests {
 	private ObjectMapper jsonMapper;
 
 	@MockBean
+	private ExpressionValidator validator;
+	@MockBean
 	private ExpressionEvaluator evaluator;
 	@MockBean
 	private ExpressionMapper mapper;
@@ -52,19 +54,19 @@ public class ExpressionControllerTests {
 			final var expectedExprJson = jsonMapper.writeValueAsString(expectedExpr);
 
 			when(mapper.daoToModel(exprDao)).thenReturn(exprModel);
-			when(evaluator.validate(exprModel)).thenReturn(Optional.empty());
+			when(validator.validate(exprModel)).thenReturn(Optional.empty());
 			when(repository.save(exprModel)).thenReturn(expectedExpr);
 			when(mapper.modelToDao(expectedExpr)).thenReturn(expectedExprDao);
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isOk())
-			       .andExpect(content().json(expectedExprJson));
+					.andExpect(status().isOk())
+					.andExpect(content().json(expectedExprJson));
 
 			verify(mapper).daoToModel(exprDao);
-			verify(evaluator).validate(exprModel);
+			verify(validator).validate(exprModel);
 			verify(repository).save(exprModel);
 			verify(mapper).modelToDao(expectedExpr);
-			verifyNoMoreInteractions(mapper, evaluator, repository, mapper);
+			verifyNoMoreInteractions(mapper, validator, repository, mapper);
 		}
 
 		@Test
@@ -73,9 +75,9 @@ public class ExpressionControllerTests {
 					{"name": "first", "value": "true"}""";
 
 			mockMvc.perform(post("/expression").content(exprJson))
-			       .andExpect(status().isUnsupportedMediaType());
+					.andExpect(status().isUnsupportedMediaType());
 
-			verifyNoInteractions(mapper, mapper, evaluator, repository);
+			verifyNoInteractions(mapper, validator, repository);
 		}
 
 		@Test
@@ -84,9 +86,9 @@ public class ExpressionControllerTests {
 					{"name": "failed format", "value": "missing last brace\"""";
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprJson))
-			       .andExpect(status().isBadRequest());
+					.andExpect(status().isBadRequest());
 
-			verifyNoInteractions(mapper, mapper, evaluator, repository);
+			verifyNoInteractions(mapper, validator, repository);
 		}
 
 		@Test
@@ -95,9 +97,9 @@ public class ExpressionControllerTests {
 					{"name": "expr name"}""";
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isBadRequest());
+					.andExpect(status().isBadRequest());
 
-			verifyNoInteractions(mapper, mapper, evaluator, repository);
+			verifyNoInteractions(mapper, validator, repository);
 		}
 
 		@Test
@@ -106,9 +108,9 @@ public class ExpressionControllerTests {
 					{"value": "true"}""";
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isBadRequest());
+					.andExpect(status().isBadRequest());
 
-			verifyNoInteractions(mapper, mapper, evaluator, repository);
+			verifyNoInteractions(mapper, validator, repository);
 		}
 
 		@Test
@@ -122,16 +124,16 @@ public class ExpressionControllerTests {
 
 			when(mapper.daoToModel(exprDao)).thenThrow(
 					new ExpressionMapper.MappingException("err", ExpressionMapper.MappingDirection.DAO_TO_MODEL));
-			when(evaluator.validate(exprModel)).thenReturn(Optional.empty());
+			when(validator.validate(exprModel)).thenReturn(Optional.empty());
 			when(repository.save(exprModel)).thenReturn(expectedExpr);
 			when(mapper.modelToDao(expectedExpr)).thenReturn(expectedExprDao);
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isBadRequest());
+					.andExpect(status().isBadRequest());
 
 			verify(mapper).daoToModel(exprDao);
 			verifyNoMoreInteractions(mapper);
-			verifyNoInteractions(evaluator, repository);
+			verifyNoInteractions(validator, repository);
 		}
 
 		@Test
@@ -142,15 +144,15 @@ public class ExpressionControllerTests {
 			final var exprModel = new Expression("first", "t");
 
 			when(mapper.daoToModel(exprDao)).thenReturn(exprModel);
-			when(evaluator.validate(exprModel)).thenReturn(Optional.of("error"));
+			when(validator.validate(exprModel)).thenReturn(Optional.of("error"));
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isBadRequest());
+					.andExpect(status().isBadRequest());
 
 			verify(mapper).daoToModel(exprDao);
-			verify(evaluator).validate(exprModel);
+			verify(validator).validate(exprModel);
 			verifyNoInteractions(repository);
-			verifyNoMoreInteractions(mapper, evaluator);
+			verifyNoMoreInteractions(mapper, validator);
 		}
 
 		@Test
@@ -161,16 +163,16 @@ public class ExpressionControllerTests {
 			final var exprModel = new Expression("first", "true");
 
 			when(mapper.daoToModel(exprDao)).thenReturn(exprModel);
-			when(evaluator.validate(exprModel)).thenReturn(Optional.empty());
+			when(validator.validate(exprModel)).thenReturn(Optional.empty());
 			when(repository.save(exprModel)).thenThrow(new ErrorResponseException(HttpStatus.INTERNAL_SERVER_ERROR));
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isInternalServerError());
+					.andExpect(status().isInternalServerError());
 
 			verify(mapper).daoToModel(exprDao);
-			verify(evaluator).validate(exprModel);
+			verify(validator).validate(exprModel);
 			verify(repository).save(exprModel);
-			verifyNoMoreInteractions(mapper, evaluator, repository);
+			verifyNoMoreInteractions(mapper, validator, repository);
 		}
 
 		@Test
@@ -182,20 +184,20 @@ public class ExpressionControllerTests {
 			final var expectedExpr = new Expression(1L, "first", "true");
 
 			when(mapper.daoToModel(exprDao)).thenReturn(exprModel);
-			when(evaluator.validate(exprModel)).thenReturn(Optional.empty());
+			when(validator.validate(exprModel)).thenReturn(Optional.empty());
 			when(repository.save(exprModel)).thenReturn(expectedExpr);
 			when(mapper.modelToDao(expectedExpr)).thenThrow(
 					new ExpressionMapper.MappingException("cannot map",
-					                                      ExpressionMapper.MappingDirection.MODEL_TO_DAO));
+							ExpressionMapper.MappingDirection.MODEL_TO_DAO));
 
 			mockMvc.perform(post("/expression").contentType(MediaType.APPLICATION_JSON).content(exprDaoJson))
-			       .andExpect(status().isInternalServerError());
+					.andExpect(status().isInternalServerError());
 
 			verify(mapper).daoToModel(exprDao);
-			verify(evaluator).validate(exprModel);
+			verify(validator).validate(exprModel);
 			verify(repository).save(exprModel);
 			verify(mapper).modelToDao(expectedExpr);
-			verifyNoMoreInteractions(mapper, evaluator, repository);
+			verifyNoMoreInteractions(mapper, validator, repository);
 		}
 	}
 
@@ -222,13 +224,13 @@ public class ExpressionControllerTests {
 			when(evaluator.evaluate(expr, document)).thenReturn(true);
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .contentType(MediaType.APPLICATION_JSON)
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isOk())
-			       .andExpect(content().string("true"));
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.contentType(MediaType.APPLICATION_JSON)
+									.content(inputJson)
+					)
+					.andExpect(status().isOk())
+					.andExpect(content().string("true"));
 
 			verify(repository).findById(expr.getId());
 			verify(evaluator).evaluate(expr, document);
@@ -250,11 +252,11 @@ public class ExpressionControllerTests {
 					}""";
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isUnsupportedMediaType());
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.content(inputJson)
+					)
+					.andExpect(status().isUnsupportedMediaType());
 
 			verifyNoInteractions(repository, evaluator);
 		}
@@ -274,11 +276,11 @@ public class ExpressionControllerTests {
 					}""";
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .contentType(MediaType.APPLICATION_JSON)
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isBadRequest());
+							post("/evaluate")
+									.contentType(MediaType.APPLICATION_JSON)
+									.content(inputJson)
+					)
+					.andExpect(status().isBadRequest());
 
 			verifyNoInteractions(repository, evaluator);
 		}
@@ -286,11 +288,11 @@ public class ExpressionControllerTests {
 		@Test
 		void missingJsonBody() throws Exception {
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .contentType(MediaType.APPLICATION_JSON)
-			       )
-			       .andExpect(status().isBadRequest());
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.contentType(MediaType.APPLICATION_JSON)
+					)
+					.andExpect(status().isBadRequest());
 
 			verifyNoInteractions(repository, evaluator);
 		}
@@ -313,12 +315,12 @@ public class ExpressionControllerTests {
 			when(repository.findById(expr.getId())).thenReturn(Optional.empty());
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .contentType(MediaType.APPLICATION_JSON)
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isNotFound());
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.contentType(MediaType.APPLICATION_JSON)
+									.content(inputJson)
+					)
+					.andExpect(status().isNotFound());
 
 			verify(repository).findById(expr.getId());
 			verifyNoMoreInteractions(repository);
@@ -340,12 +342,12 @@ public class ExpressionControllerTests {
 					}""";
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .contentType(MediaType.APPLICATION_JSON)
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isBadRequest());
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.contentType(MediaType.APPLICATION_JSON)
+									.content(inputJson)
+					)
+					.andExpect(status().isBadRequest());
 
 			verifyNoInteractions(repository, evaluator);
 		}
@@ -371,12 +373,12 @@ public class ExpressionControllerTests {
 					new ExpressionEvaluator.EvaluationException("syntax error"));
 
 			mockMvc.perform(
-					       post("/evaluate")
-							       .queryParam("expressionId", "1")
-							       .contentType(MediaType.APPLICATION_JSON)
-							       .content(inputJson)
-			       )
-			       .andExpect(status().isBadRequest());
+							post("/evaluate")
+									.queryParam("expressionId", "1")
+									.contentType(MediaType.APPLICATION_JSON)
+									.content(inputJson)
+					)
+					.andExpect(status().isBadRequest());
 
 			verify(repository).findById(expr.getId());
 			verify(evaluator).evaluate(expr, document);

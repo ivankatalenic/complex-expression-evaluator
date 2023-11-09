@@ -4,8 +4,8 @@ import com.ivankatalenic.evaluator.dao.ExpressionDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
@@ -50,22 +50,23 @@ class IntegrationTests {
 			final var expectedExpr = new ExpressionDao(1L, "first", exprValue);
 			assertThat(restTemplate.postForObject(url, inputExpr, ExpressionDao.class)).isEqualTo(expectedExpr);
 		}
+
 		@Test
 		void success() throws URISyntaxException {
 			final var exprId = 1L;
 			final var url = new URI(String.format("http://localhost:%d/evaluate?expressionId=%d", port, exprId));
 			final var jsonDocument = """
-				{
-					"first_name": "Ivan",
-					"last_name": "Katalenic",
-					"address": [
-						{
-							"label": "Home",
-							"address": "127.0.0.1"
-						}
-					]
-				}
-				""";
+					{
+						"first_name": "Ivan",
+						"last_name": "Katalenic",
+						"address": [
+							{
+								"label": "Home",
+								"address": "127.0.0.1"
+							}
+						]
+					}
+					""";
 			final var headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			final var httpEntity = new HttpEntity<>(jsonDocument, headers);

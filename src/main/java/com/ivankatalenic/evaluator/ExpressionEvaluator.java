@@ -3,17 +3,7 @@ package com.ivankatalenic.evaluator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ivankatalenic.evaluator.models.Expression;
 
-import java.util.Optional;
-
 public interface ExpressionEvaluator {
-	/**
-	 * Validates that an expression conforms to the grammar.
-	 *
-	 * @param e An expression to be validated.
-	 * @return An error string describing encountered syntax errors.
-	 */
-	// TODO Return error instead of string
-	Optional<String> validate(Expression e);
 
 	/**
 	 * Evaluates an expression with the given JSON document containing interpretation for the placeholders

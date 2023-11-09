@@ -2,6 +2,7 @@ package com.ivankatalenic.evaluator.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
+import com.ivankatalenic.evaluator.ExpressionValidator;
 import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionInvalidException;
 import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionNotFoundException;
 import com.ivankatalenic.evaluator.dao.ExpressionDao;
@@ -24,13 +25,16 @@ import java.util.Optional;
 public class ExpressionController {
 
 	private final Log log = LogFactory.getLog(getClass());
-	private final ExpressionEvaluator evaluator;
 	private final ExpressionMapper mapper;
+	private final ExpressionEvaluator evaluator;
+	private final ExpressionValidator validator;
 	private final ExpressionRepository repository;
 
-	public ExpressionController(ExpressionEvaluator evaluator, ExpressionMapper mapper, ExpressionRepository repository) {
-		this.evaluator = evaluator;
+	public ExpressionController(ExpressionMapper mapper, ExpressionEvaluator evaluator, ExpressionValidator validator,
+			ExpressionRepository repository) {
 		this.mapper = mapper;
+		this.evaluator = evaluator;
+		this.validator = validator;
 		this.repository = repository;
 	}
 
@@ -53,12 +57,12 @@ public class ExpressionController {
 	@PostMapping("/expression")
 	public ExpressionDao addExpression(@Valid @RequestBody ExpressionDao exprDao) {
 		final var expr = mapper.daoToModel(exprDao);
-		Optional<String> error = evaluator.validate(expr);
+		Optional<String> error = validator.validate(expr);
 		if (error.isPresent()) {
 			throw new ExpressionInvalidException(error.get());
 		}
 		log.debug(String.format("New expression: Name: %s, Value: %s\n", exprDao.getName(),
-		                        exprDao.getValue()));
+				exprDao.getValue()));
 		return mapper.modelToDao(repository.save(expr));
 	}
 
@@ -72,7 +76,7 @@ public class ExpressionController {
 	@PostMapping("/evaluate")
 	public boolean evaluate(@RequestParam Long expressionId, @RequestBody JsonNode document) {
 		Expression expression = repository.findById(expressionId)
-		                                     .orElseThrow(() -> new ExpressionNotFoundException(expressionId));
+				.orElseThrow(() -> new ExpressionNotFoundException(expressionId));
 		return evaluator.evaluate(expression, document);
 	}
 
