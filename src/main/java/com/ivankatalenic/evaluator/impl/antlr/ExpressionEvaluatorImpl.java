@@ -1,12 +1,8 @@
-package com.ivankatalenic.evaluator;
+package com.ivankatalenic.evaluator.impl.antlr;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ivankatalenic.evaluator.exceptions.EvaluationException;
-import com.ivankatalenic.evaluator.grammar.ExpressionLexer;
-import com.ivankatalenic.evaluator.grammar.ExpressionParser;
+import com.ivankatalenic.evaluator.ExpressionEvaluator;
 import com.ivankatalenic.evaluator.models.Expression;
-import com.ivankatalenic.evaluator.parser.ErrorListener;
-import com.ivankatalenic.evaluator.parser.SyntaxTreeVisitor;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

@@ -1,4 +1,4 @@
-package com.ivankatalenic.evaluator.parser;
+package com.ivankatalenic.evaluator.impl.antlr;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;

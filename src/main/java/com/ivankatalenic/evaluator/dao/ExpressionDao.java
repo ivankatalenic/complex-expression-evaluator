@@ -1,37 +1,28 @@
-package com.ivankatalenic.evaluator.models;
+package com.ivankatalenic.evaluator.dao;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.Objects;
 
-/**
- * A complex expression.
- */
-@Entity
-public class Expression {
-	@Id
-	@GeneratedValue
+public class ExpressionDao {
 	private Long id;
-	@Column(nullable = false)
+	@NotNull
 	private String name;
-	@Column(nullable = false)
+	@NotNull
 	private String value;
 
-	public Expression(Long id, String name, String value) {
+	public ExpressionDao(Long id, String name, String value) {
 		this.id = id;
 		this.name = name;
 		this.value = value;
 	}
 
-	public Expression(String name, String value) {
+	public ExpressionDao(String name, String value) {
 		this.name = name;
 		this.value = value;
 	}
 
-	public Expression() {
+	public ExpressionDao() {
 
 	}
 
@@ -64,7 +55,7 @@ public class Expression {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof Expression other)) {
+		if (!(o instanceof ExpressionDao other)) {
 			return false;
 		}
 		return Objects.equals(this.id, other.id) && Objects.equals(this.name, other.name) && Objects.equals(this.value,

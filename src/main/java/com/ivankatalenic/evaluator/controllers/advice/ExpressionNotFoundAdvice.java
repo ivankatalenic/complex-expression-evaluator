@@ -1,18 +1,17 @@
 package com.ivankatalenic.evaluator.controllers.advice;
 
-import com.ivankatalenic.evaluator.exceptions.ExpressionNotFoundException;
+import com.ivankatalenic.evaluator.controllers.exceptions.ExpressionNotFoundException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class ExpressionNotFoundAdvice {
-	@ResponseBody
 	@ExceptionHandler(ExpressionNotFoundException.class)
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	public String expressionNotFoundHandler(ExpressionNotFoundException ex) {
-		return ex.getMessage();
+	public ProblemDetail handler(ExpressionNotFoundException ex) {
+		final var problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+		problemDetail.setDetail(String.format("Expression with ID %d is not found", ex.getId()));
+		return problemDetail;
 	}
 }

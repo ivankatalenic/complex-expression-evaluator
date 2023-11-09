@@ -1,7 +1,6 @@
 package com.ivankatalenic.evaluator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.ivankatalenic.evaluator.exceptions.EvaluationException;
 import com.ivankatalenic.evaluator.models.Expression;
 
 import java.util.Optional;
@@ -13,6 +12,7 @@ public interface ExpressionEvaluator {
 	 * @param e An expression to be validated.
 	 * @return An error string describing encountered syntax errors.
 	 */
+	// TODO Return error instead of string
 	Optional<String> validate(Expression e);
 
 	/**
@@ -25,4 +25,13 @@ public interface ExpressionEvaluator {
 	 * @throws EvaluationException When there are evaluation errors.
 	 */
 	boolean evaluate(Expression e, JsonNode jsonDocument) throws EvaluationException;
+
+	/**
+	 * Exception for errors that arise during evaluation of an expression.
+	 */
+	class EvaluationException extends RuntimeException {
+		public EvaluationException(String msg) {
+			super(msg);
+		}
+	}
 }
