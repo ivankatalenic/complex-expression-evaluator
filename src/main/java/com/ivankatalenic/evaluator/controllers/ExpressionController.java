@@ -8,8 +8,8 @@ import com.ivankatalenic.evaluator.mapper.ExpressionMapper;
 import com.ivankatalenic.evaluator.models.Expression;
 import com.ivankatalenic.evaluator.repository.ExpressionRepository;
 import jakarta.validation.Valid;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 public class ExpressionController {
 
-	private final Log log = LogFactory.getLog(getClass());
+	private final Logger log = LoggerFactory.getLogger(getClass());
 	private final ExpressionMapper mapper;
 	private final ExpressionEvaluator evaluator;
 	private final ExpressionRepository repository;
@@ -52,8 +52,7 @@ public class ExpressionController {
 	@PostMapping("/expression")
 	public ExpressionDao addExpression(@Valid @RequestBody ExpressionDao exprDao) {
 		final var expr = mapper.daoToModel(exprDao);
-		log.debug(String.format("New expression: Name: %s, Value: %s\n", exprDao.getName(),
-				exprDao.getValue()));
+		log.debug("New expression: Name: {}, Value: {}.", exprDao.getName(), exprDao.getValue());
 		return mapper.modelToDao(repository.save(expr));
 	}
 
@@ -66,6 +65,7 @@ public class ExpressionController {
 	 */
 	@PostMapping("/evaluate")
 	public boolean evaluate(@RequestParam Long expressionId, @RequestBody JsonNode document) {
+		log.debug("Evaluation request received for expression ID {}.", expressionId);
 		Expression expression = repository.findById(expressionId)
 				.orElseThrow(() -> new ExpressionNotFoundException(expressionId));
 		return evaluator.evaluate(expression, document);

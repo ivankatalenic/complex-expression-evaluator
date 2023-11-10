@@ -3,8 +3,8 @@ package com.ivankatalenic.evaluator.impl.antlr;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.ivankatalenic.evaluator.ExpressionEvaluator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.BiPredicate;
 
@@ -12,7 +12,7 @@ import java.util.function.BiPredicate;
  * A syntax tree visitor that computes the final boolean value of a parsed expression using the given JSON document.
  */
 public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
-	private final Log log = LogFactory.getLog(getClass());
+	private final Logger log = LoggerFactory.getLogger(getClass());
 	private final Object nullObject = new Object();
 	private final JsonNode rootJsonNode;
 	private JsonNode currentJsonNode;
@@ -20,6 +20,30 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 
 	public SyntaxTreeVisitor(final JsonNode rootJsonNode) {
 		this.rootJsonNode = rootJsonNode;
+	}
+
+	private static boolean compareBoolExpr(Object left, Object right,
+			BiPredicate<Long, Long> longPredicate,
+			BiPredicate<Double, Double> doublePredicate) throws ExpressionEvaluator.EvaluationException {
+		return switch (left) {
+			case Long leftLong -> {
+				if (right instanceof Long rightLong) {
+					yield longPredicate.test(leftLong, rightLong);
+				}
+				throw new ExpressionEvaluator.EvaluationException(
+						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
+			}
+			case Double leftDouble -> {
+				if (right instanceof Double rightDouble) {
+					yield doublePredicate.test(leftDouble, rightDouble);
+				}
+				throw new ExpressionEvaluator.EvaluationException(
+						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
+			}
+			default -> throw new ExpressionEvaluator.EvaluationException(
+					String.format("cannot use numerical relational operator on a non-numerical value of %s",
+							left.getClass()));
+		};
 	}
 
 	@Override
@@ -82,30 +106,6 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 		Object left = visit(ctx.eq_elem(0));
 		Object right = visit(ctx.eq_elem(1));
 		return !left.equals(right);
-	}
-
-	private static boolean compareBoolExpr(Object left, Object right,
-	                                       BiPredicate<Long, Long> longPredicate,
-	                                       BiPredicate<Double, Double> doublePredicate) throws ExpressionEvaluator.EvaluationException {
-		return switch (left) {
-			case Long leftLong -> {
-				if (right instanceof Long rightLong) {
-					yield longPredicate.test(leftLong, rightLong);
-				}
-				throw new ExpressionEvaluator.EvaluationException(
-						String.format("cannot compare an integer with a non-integer, that is %s", right.getClass()));
-			}
-			case Double leftDouble -> {
-				if (right instanceof Double rightDouble) {
-					yield doublePredicate.test(leftDouble, rightDouble);
-				}
-				throw new ExpressionEvaluator.EvaluationException(
-						String.format("cannot compare a float with a non-float, that is %s", right.getClass()));
-			}
-			default -> throw new ExpressionEvaluator.EvaluationException(
-					String.format("cannot use numerical relational operator on a non-numerical value of %s",
-					              left.getClass()));
-		};
 	}
 
 	@Override
@@ -178,7 +178,8 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 			case JsonNodeType.BOOLEAN -> jsonNode.asBoolean();
 			case JsonNodeType.STRING -> jsonNode.asText();
 			case JsonNodeType.NULL -> nullObject;
-			case JsonNodeType.MISSING -> throw new ExpressionEvaluator.EvaluationException("JSON path leads to a missing node");
+			case JsonNodeType.MISSING ->
+					throw new ExpressionEvaluator.EvaluationException("JSON path leads to a missing node");
 			default -> jsonNode;
 		};
 	}
@@ -211,7 +212,7 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 			throw new ExpressionEvaluator.EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
-		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, currentJsonNode));
+		log.debug("Path: {}, node: {}", currentJsonPath, currentJsonNode);
 		return visit(ctx.path());
 	}
 
@@ -223,7 +224,7 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 			throw new ExpressionEvaluator.EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
-		log.debug(String.format("Path: %s, node: %s\n", currentJsonPath, currentJsonNode));
+		log.debug("Path: {}, node: {}", currentJsonPath, currentJsonNode);
 		return visit(ctx.path());
 	}
 
@@ -236,6 +237,7 @@ public class SyntaxTreeVisitor extends ExpressionBaseVisitor<Object> {
 			throw new ExpressionEvaluator.EvaluationException(
 					String.format("cannot find the object \"%s\" in the provided JSON document", currentJsonPath));
 		}
+		log.debug("Path: {}, node: {}", currentJsonPath, currentJsonNode);
 		return visit(ctx.path());
 	}
 
