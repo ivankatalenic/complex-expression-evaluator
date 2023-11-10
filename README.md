@@ -35,6 +35,9 @@ Implementation details:
 	}
 	```
 
+Swagger UI for the OpenAPI documentation is available at http://localhost:8080/swagger-ui/index.html, 
+while documentation in JSON format is available at http://localhost:8080/api-docs.
+
 ## Commands
 
 ### Run
